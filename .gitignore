@@ -1,0 +1,5 @@
+.secret
+accs.txt
+package-lock.json
+node_modules/
+build/
