@@ -50,6 +50,7 @@ contract GlqStakingContract {
 
     GlqStaker[]                     private _stakers;
     uint256                         private _stakersIndex;
+    uint256                         private _totalStaked;
     bool                            private _emergencyWithdraw;
 
     mapping(address => uint256)     private _indexStaker;
@@ -60,6 +61,7 @@ contract GlqStakingContract {
         _glqTokenAddress = glqAddr;
         _glqDeployerManager = manager;
 
+        _totalStaked = 0;
         _stakersIndex = 1;
         
         //_blocksPerYear = 2250000;
@@ -166,6 +168,36 @@ contract GlqStakingContract {
         return _stakers.length;
     }
 
+    /*
+    ** Return all APY per different Tier
+    */
+    function getTiersAPY() public view returns(uint256, uint256, uint256) {
+        return (_apyStruct.tier1Apy, _apyStruct.tier2Apy, _apyStruct.tier3Apy);
+    }
+
+    /*
+    ** Return the Total staked amount
+    */
+    function getTotalStaked() public view returns(uint256) {
+        return _totalStaked;
+    }
+
+    /*
+    ** Return the top 3 of stakers (by age)
+    */
+    function getTopStakers() public view returns(address[] memory, uint256[] memory) {
+        uint256 len = _stakers.length;
+        address[] memory addresses = new address[](3);
+        uint256[] memory amounts = new uint256[](3);
+
+        for (uint i = 0; i < len && i <= 2; i++) {
+            addresses[i] = _stakers[i].wallet;
+            amounts[i] = _stakers[i].amount;
+        }
+
+        return (addresses, amounts);
+    }
+
     /* Getter ---- Read-Only */
 
 
@@ -256,6 +288,7 @@ contract GlqStakingContract {
         );
 
         uint256 index = _indexStaker[msg.sender];
+        _totalStaked += glqAmount;
 
         if (index == 0) {
             GlqStaker memory staker = GlqStaker(msg.sender, block.number, glqAmount, _stakersIndex, false);
@@ -329,6 +362,7 @@ contract GlqStakingContract {
         //auto claim when withdraw
         claimGlq();
 
+        _totalStaked -= staker.amount;
         require(
             glqToken.balanceOf(address(this)) >= staker.amount,
             "Insufficient funds from the deployer contract");
