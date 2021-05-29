@@ -145,28 +145,28 @@ module.exports = async (callback) => {
     //await withdrawGlq(deployedContract)
 
     // Fetch amount deposited
-    const deposited = getDecimalAmount(await getTotalDeposited(deployedContract, accounts[0]))
-    //console.log(`Deposited: ${deposited}`)
+    // const deposited = getDecimalAmount(await getTotalDeposited(deployedContract, accounts[0]))
+    // //console.log(`Deposited: ${deposited}`)
 
-    // Fetch Current Tier
-    const tier = await getWalletCurrentTier(deployedContract, accounts[0])
-    //console.log(tier.toString())
+    // // Fetch Current Tier
+    // const tier = await getWalletCurrentTier(deployedContract, accounts[0])
+    // //console.log(tier.toString())
 
-    // Claim Glq
-    const toClaim = await getGlqToClaim(deployedContract, accounts[0])
-    //console.log(getDecimalAmount(toClaim))
+    // // Claim Glq
+    // const toClaim = await getGlqToClaim(deployedContract, accounts[0])
+    // //console.log(getDecimalAmount(toClaim))
   
-    // Percent APR on next claim
-    const toClaimAPR = await getWaitingPercentAPR(deployedContract, accounts[0])
-    //console.log(getDecimalAmount(toClaimAPR))
+    // // Percent APR on next claim
+    // const toClaimAPR = await getWaitingPercentAPR(deployedContract, accounts[0])
+    // //console.log(getDecimalAmount(toClaimAPR))
 
-    // Fetch Rank Position
-    const position = await getPosition(deployedContract, accounts[0]);
-    console.log(`Deposited: ${deposited}, Tier: ${tier.toString()}, Rank: ${position.toString()}, GLQ to claim: ${getDecimalAmount(toClaim)} GLQ` +
-    ` (represent ${getDecimalAmount(toClaimAPR)}%)`)
+    // // Fetch Rank Position
+    // const position = await getPosition(deployedContract, accounts[0]);
+    // console.log(`Deposited: ${deposited}, Tier: ${tier.toString()}, Rank: ${position.toString()}, GLQ to claim: ${getDecimalAmount(toClaim)} GLQ` +
+    // ` (represent ${getDecimalAmount(toClaimAPR)}%)`)
 
     // Add Incentive Test
-    //await addIncentive(deployedContract, amountToDeposit)
+    await addIncentive(deployedContract, amountToDeposit)
 
     // Remove Incentive Test
     // await removeIncentive(deployedContract, amountToDeposit)

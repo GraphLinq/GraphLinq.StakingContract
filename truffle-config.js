@@ -11,11 +11,12 @@ module.exports = {
   },
   networks: {
     development: {
-      //provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/4f477eb263cd4f2d8777c2ed46ac552f`),
-      provider: () => new HDWalletProvider(mnemonic, `http://127.0.0.1:7545`),
+      provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/4f477eb263cd4f2d8777c2ed46ac552f`),
+      //provider: () => new HDWalletProvider(mnemonic, `http://127.0.0.1:7545`),
       //host: "127.0.0.1",
-      network_id: "5777",
-      port: 7545,
+      // network_id: "5777",
+      // port: 7545,
+      network_id: "3",
       confirmations: 0,
       timeoutBlocks: 200,
       skipDryRun: true

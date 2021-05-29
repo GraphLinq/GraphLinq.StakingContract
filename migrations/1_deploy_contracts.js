@@ -1,5 +1,5 @@
 const StakingContract = artifacts.require("GlqStakingContract");
 
 module.exports = function(deployer) {
-  deployer.deploy(StakingContract, "0x18fC0081Ee9d6f7a4F97a2c9908b13699Cd61e8f", "0x5a1f65AA9C929B8E337Cce69B689bfEA0D8dbA68");
+  deployer.deploy(StakingContract, "0xCcbB043F94c49Be8D448582Cab9158cDFc57a0a1", "0x8984e422E30033A84B780420566046d25EB3519a");
 };
