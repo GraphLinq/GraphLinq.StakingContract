@@ -64,11 +64,10 @@ contract GlqStakingContract {
         _totalStaked = 0;
         _stakersIndex = 1;
         
-        //_blocksPerYear = 2250000;
-        _blocksPerYear = 1000;
+        _blocksPerYear = 2250000;
         
         // default t1: 25%, t2: 12.5%, t3: 6.5%
-        _apyStruct = GraphLinqApyStruct(25*1e18, 12500000000000000000, 6500000000000000000);
+        _apyStruct = GraphLinqApyStruct(50*1e18, 25*1e18, 12500000000000000000);
     }
 
 
@@ -89,7 +88,7 @@ contract GlqStakingContract {
         // Total length of stakers
         uint256 totalIndex = _stakers.length.mul(1e18);
         // 15% of hodlers in T1 
-        uint256 t1MaxIndex = totalIndex.div(100).mul(15);        
+        uint256 t1MaxIndex = totalIndex.div(100).mul(15);
         // 55% of hodlers in T2
         uint256 t2MaxIndex = totalIndex.div(100).mul(55);
 
@@ -199,7 +198,7 @@ contract GlqStakingContract {
     }
 
     /*
-    ** Return the sender wallet position from the tier system
+    ** Return the total amount deposited on a rank tier
     */
     function getTierTotalStaked(uint tier) public view returns (uint256) {
         uint256 totalAmount = 0;
@@ -372,6 +371,7 @@ contract GlqStakingContract {
             glqToken.transfer(msg.sender, staker.amount) == true,
             "Error transfer on the contract"
         );
+        staker.amount = 0;
     }
 
     /*
