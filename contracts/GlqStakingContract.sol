@@ -66,7 +66,7 @@ contract GlqStakingContract {
         
         _blocksPerYear = 2250000;
         
-        // default t1: 25%, t2: 12.5%, t3: 6.5%
+        // default t1: 30%, t2: 15%, t3: 7.5%
         _apyStruct = GraphLinqApyStruct(50*1e18, 25*1e18, 12500000000000000000);
     }
 
