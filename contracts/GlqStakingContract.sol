@@ -118,7 +118,7 @@ contract GlqStakingContract {
         GlqStaker storage staker = _stakers[index - 1];
 
         uint256 calculatedApr = getWaitingPercentAPR(wallet);
-        return staker.amount.mul(calculatedApr.div(1e16)).div(10000);
+        return staker.amount.mul(calculatedApr).div(100).div(1e18);
     }
 
     /*
@@ -129,19 +129,19 @@ contract GlqStakingContract {
         require (index > 0, "Invalid staking index");
         GlqStaker storage staker = _stakers[index - 1];
 
-        uint256 walletTier = getWalletCurrentTier(msg.sender);
+        uint256 walletTier = getWalletCurrentTier(wallet);
         uint256 blocksSpent = block.number.sub(staker.block_number);
         if (blocksSpent == 0) { return 0; }
-        uint256 percentYearSpent = percent(blocksSpent, _blocksPerYear, 2);
+        uint256 percentYearSpent = percent(blocksSpent.mul(10000), _blocksPerYear.mul(10000), 20);
 
         uint256 percentAprGlq = _apyStruct.tier3Apy;
         if (walletTier == 1) {
             percentAprGlq = _apyStruct.tier1Apy;
-        } else if (walletTier == 2) { 
+        } else if (walletTier == 2) {
             percentAprGlq = _apyStruct.tier2Apy;
         }
 
-        return percentAprGlq.mul(percentYearSpent).div(100);
+        return percentAprGlq.mul(percentYearSpent).div(100).div(1e18);
     }
 
     /*
@@ -422,13 +422,10 @@ contract GlqStakingContract {
         GlqStaker storage staker = _stakers[index - 1];
         uint256 glqToClaim = getGlqToClaim(msg.sender);
         IERC20 glqToken = IERC20(_glqTokenAddress);
+        if (glqToClaim == 0) { return 0; }
 
         require(
-            glqToClaim > 0,
-            "No rewards to claim."
-        );
-        require(
-            glqToken.balanceOf(address(this)) > glqToClaim,
+            glqToken.balanceOf(address(this)) >= glqToClaim,
             "Not enough funds in the staking program to claim rewards"
         );
 
