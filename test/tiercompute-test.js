@@ -151,15 +151,14 @@ contract("TierCompute", async accounts => {
         let tier3 = await deployedContract.getTier3();;
 
         // remove all tier1
-        tier1.forEach(async id => {
-            await deployedContract.remove(id);
-        })
+        for(let i = 0; i < tier1.length; i++)
+            await deployedContract.remove(tier1[tier1.length - i - 1]);
 
         tier1 = await deployedContract.getTier1();
         tier2 = await deployedContract.getTier2();
         tier3 = await deployedContract.getTier3();
 
-        assert.equal(tier1.length, 6);
+        assert.equal(tier1.length, 5);
         assert.equal(tier2.length, 15);
         assert.equal(tier3.length, 19);
     });
@@ -172,128 +171,33 @@ contract("TierCompute", async accounts => {
         let tier3 = await deployedContract.getTier3();;
 
         // remove all tier2
-        tier2.forEach(async id => {
-            await deployedContract.remove(id);
-        })
+        for(let i = 0; i < tier2.length; i++)
+            await deployedContract.remove(tier2[tier2.length - i - 1]);
 
         tier1 = await deployedContract.getTier1();
         tier2 = await deployedContract.getTier2();
         tier3 = await deployedContract.getTier3();
 
-        assert.equal(tier1.length, 3); // ?
-        assert.equal(tier2.length, 10);
-        assert.equal(tier3.length, 13);
+        assert.equal(tier1.length, 3);
+        assert.equal(tier2.length, 9);
+        assert.equal(tier3.length, 12);
     });
 
-    // it("stakers should be properly tiered after adding 50 users", async () => {
-    //     const deployedContract = await TierComputeContract.deployed();
+    it("stakers should be properly tiered after adding 50 users", async () => {
+        const deployedContract = await TierComputeContract.deployed();
         
-    //     // add 50 more
-    //     for(let i = 0; i < 100; i++) {
-    //         await deployedContract.add();
-    //     }
+        // add 50 more
+        for(let i = 0; i < 100; i++) {
+            await deployedContract.add();
+        }
 
-    //     const tier1 = await deployedContract.getTier1();
-    //     const tier2 = await deployedContract.getTier2();
-    //     const tier3 = await deployedContract.getTier3();
+        const tier1 = await deployedContract.getTier1();
+        const tier2 = await deployedContract.getTier2();
+        const tier3 = await deployedContract.getTier3();
 
-    //     // assert.equal(tier1.length, 11);
-    //     // assert.equal(tier2.length, 29);
-    //     // assert.equal(tier3.length, 34);
-
-    //     console.log(tier1.length, tier2.length, tier3.length);
-    // });
-
-    // it("stakers should be properly tiered after removing tier2 again", async () => {
-    //     const deployedContract = await TierComputeContract.deployed();
-        
-    //     let tier1 = await deployedContract.getTier1();
-    //     let tier2 = await deployedContract.getTier2();
-    //     let tier3 = await deployedContract.getTier3();
-
-    //     // remove all tier2
-    //     tier2.forEach(async id => {
-    //         await deployedContract.remove(id);
-    //     })
-
-    //     tier1 = await deployedContract.getTier1();
-    //     tier2 = await deployedContract.getTier2();
-    //     tier3 = await deployedContract.getTier3();
-
-    //     // assert.equal(tier1.length, 11);
-    //     // assert.equal(tier2.length, 18);
-    //     // assert.equal(tier3.length, 21);
-
-    //     console.log(tier1.length, tier2.length, tier3.length);
-    // });
-
-    // it("stakers should be properly tiered after removing tier2 again 2", async () => {
-    //     const deployedContract = await TierComputeContract.deployed();
-        
-    //     let tier1 = await deployedContract.getTier1();
-    //     let tier2 = await deployedContract.getTier2();
-    //     let tier3 = await deployedContract.getTier3();
-
-    //     // remove all tier2
-    //     tier2.forEach(async id => {
-    //         await deployedContract.remove(id);
-    //     })
-
-    //     tier1 = await deployedContract.getTier1();
-    //     tier2 = await deployedContract.getTier2();
-    //     tier3 = await deployedContract.getTier3();
-
-    //     // assert.equal(tier1.length, 11);
-    //     // assert.equal(tier2.length, 18);
-    //     // assert.equal(tier3.length, 21);
-
-    //     console.log(tier1.length, tier2.length, tier3.length);
-    // });
-
-    // it("stakers should be properly tiered after removing tier2 again 3", async () => {
-    //     const deployedContract = await TierComputeContract.deployed();
-        
-    //     let tier1 = await deployedContract.getTier1();
-    //     let tier2 = await deployedContract.getTier2();
-    //     let tier3 = await deployedContract.getTier3();
-
-    //     // remove all tier2
-    //     tier2.forEach(async id => {
-    //         await deployedContract.remove(id);
-    //     })
-
-    //     tier1 = await deployedContract.getTier1();
-    //     tier2 = await deployedContract.getTier2();
-    //     tier3 = await deployedContract.getTier3();
-
-    //     // assert.equal(tier1.length, 11);
-    //     // assert.equal(tier2.length, 18);
-    //     // assert.equal(tier3.length, 21);
-
-    //     console.log(tier1.length, tier2.length, tier3.length);
-    // });
-
-    // it("stakers should be properly tiered after removing tier2 again 4", async () => {
-    //     const deployedContract = await TierComputeContract.deployed();
-        
-    //     let tier1 = await deployedContract.getTier1();
-    //     let tier2 = await deployedContract.getTier2();
-    //     let tier3 = await deployedContract.getTier3();
-
-    //     // remove all tier2
-    //     tier2.forEach(async id => {
-    //         await deployedContract.remove(id);
-    //     })
-
-    //     tier1 = await deployedContract.getTier1();
-    //     tier2 = await deployedContract.getTier2();
-    //     tier3 = await deployedContract.getTier3();
-
-    //     // assert.equal(tier1.length, 11);
-    //     // assert.equal(tier2.length, 18);
-    //     // assert.equal(tier3.length, 21);
-
-    //     console.log(tier1.length, tier2.length, tier3.length);
-    // });
+        assert.equal(tier1.length, 18);
+        assert.equal(tier2.length, 49);
+        assert.equal(tier3.length, 57);
+    });
 
 });

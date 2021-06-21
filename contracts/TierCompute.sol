@@ -30,7 +30,6 @@ contract TierCompute {
         
         //update cursors
         _updateCursors();
-        _updateCursors();
     }
     
     function _removeByID(uint256 id) internal {
@@ -68,7 +67,6 @@ contract TierCompute {
         }
         
         //update cursors
-        _updateCursors();
         _updateCursors();
         
         //free memory

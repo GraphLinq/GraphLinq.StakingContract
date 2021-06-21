@@ -11,7 +11,6 @@ struct GlqStaker {
     address wallet;
     uint256 block_number;
     uint256 amount;
-    bool already_withdrawn;
 }
 
 struct GraphLinqApyStruct {
@@ -75,19 +74,26 @@ contract GlqStakingContract is TierCompute {
         return getTier(_walletToID[wallet]);
     }
 
-    // /*
-    // ** Return rank position of a wallet
-    // */
-    // function getPosition(address wallet) public view returns (uint256) {
-    //      uint256 index = _indexStaker[wallet];
-    //      return index;
-    // }
+    /*
+    ** Return rank position of a wallet
+    */
+    function getPosition(address wallet) public view returns (uint256) {
+        uint256 id = _walletToID[wallet];
+        if(id == 0) return 0;
+        uint256 position = 1;
+        uint256 index = tier1_head;
+        while(index != id) {
+            index = items[index].next;
+            position++;
+        }
+        return position;
+    }
 
     /*
     ** Return the amount of GLQ that a wallet can currently claim from the staking contract
     */
     function getGlqToClaim(address wallet) public walletExists(wallet) view returns(uint256) {
-        GlqStaker storage staker = _stakers[_walletToID[wallet]];
+        GlqStaker memory staker = _stakers[_walletToID[wallet]];
 
         uint256 calculatedApr = getWaitingPercentAPR(wallet);
         return staker.amount.mul(calculatedApr).div(100).div(1e18);
@@ -97,7 +103,7 @@ contract GlqStakingContract is TierCompute {
     ** Return the current percent winnable for a staker wallet
     */
     function getWaitingPercentAPR(address wallet) public walletExists(wallet) view returns(uint256) {
-        GlqStaker storage staker = _stakers[_walletToID[wallet]];
+        GlqStaker memory staker = _stakers[_walletToID[wallet]];
 
         uint256 walletTier = getWalletCurrentTier(wallet);
         uint256 blocksSpent = block.number.sub(staker.block_number);
@@ -283,7 +289,7 @@ contract GlqStakingContract is TierCompute {
             // add new staker
             uint256 id = _insertTier3();
             _walletToID[msg.sender] = id;
-            GlqStaker memory staker = GlqStaker(msg.sender, block.number, glqAmount, false);
+            GlqStaker memory staker = GlqStaker(msg.sender, block.number, glqAmount);
             _stakers[id] = staker;
 
             // emit event of a new staker registered at current block position
@@ -346,12 +352,7 @@ contract GlqStakingContract is TierCompute {
             "Error transfer on the contract"
         );
         staker.amount = 0;
-        
-        if (staker.already_withdrawn) {
-            _removeByID(id);
-        } else {
-            staker.already_withdrawn = true;
-        }
+        _removeByID(id);
     }
 
     function percent(uint256 numerator, uint256 denominator, uint256 precision) private pure returns(uint256) {
