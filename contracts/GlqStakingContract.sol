@@ -5,13 +5,12 @@ pragma solidity ^0.8.0;
 import "./libs/maths/SafeMath.sol";
 import "./libs/string.sol";
 import "./interfaces/IERC20.sol";
-import "./libs/sort.sol";
+import "./TierCompute.sol";
 
 struct GlqStaker {
     address wallet;
     uint256 block_number;
     uint256 amount;
-    uint256 index_at;
     bool already_withdrawn;
 }
 
@@ -21,11 +20,9 @@ struct GraphLinqApyStruct {
     uint256 tier3Apy;      
 }
 
-contract GlqStakingContract {
+contract GlqStakingContract is TierCompute {
 
     using SafeMath for uint256;
-    using strings for *;
-    using QuickSorter for *;
 
     event NewStakerRegistered (
         address staker_address,
@@ -48,21 +45,18 @@ contract GlqStakingContract {
     */
     uint256 private _totalGlqIncentive;
 
-    GlqStaker[]                     private _stakers;
-    uint256                         private _stakersIndex;
-    uint256                         private _totalStaked;
+    mapping(uint256 => GlqStaker)   private _stakers;
+    mapping(address => uint256)     private _walletToID;
+    
     bool                            private _emergencyWithdraw;
 
-    mapping(address => uint256)     private _indexStaker;
     uint256                         private _blocksPerYear;
+    uint256                         private _totalStaked;
     GraphLinqApyStruct              private _apyStruct;
-
+    
     constructor(address glqAddr, address manager) {
         _glqTokenAddress = glqAddr;
         _glqDeployerManager = manager;
-
-        _totalStaked = 0;
-        _stakersIndex = 1;
         
         _blocksPerYear = 2250000;
         
@@ -75,47 +69,25 @@ contract GlqStakingContract {
 
     /*
     ** Return the sender wallet position from the tier system
+    ** Returns 0 if not a current staker
     */
-    function getWalletCurrentTier(address wallet) public view returns (uint256) {
-        uint256 currentTier = 3;
-        uint256 index = _indexStaker[wallet];
-        require(
-            index != 0,
-            "You dont have any tier rank currently in the Staking contract."
-        );
-        uint256 walletAggregatedIndex = (index).mul(1e18);
-
-        // Total length of stakers
-        uint256 totalIndex = _stakers.length.mul(1e18);
-        // 15% of hodlers in T1 
-        uint256 t1MaxIndex = totalIndex.div(100).mul(15);
-        // 55% of hodlers in T2
-        uint256 t2MaxIndex = totalIndex.div(100).mul(55);
-
-        if (walletAggregatedIndex <= t1MaxIndex) {
-            currentTier = 1;
-        } else if (walletAggregatedIndex > t1MaxIndex && walletAggregatedIndex <= t2MaxIndex) {
-            currentTier = 2;
-        }
-
-        return currentTier;
+    function getWalletCurrentTier(address wallet) public walletExists(wallet) view returns (uint256) {
+        return getTier(_walletToID[wallet]);
     }
 
-    /*
-    ** Return rank position of a wallet
-    */
-    function getPosition(address wallet) public view returns (uint256) {
-         uint256 index = _indexStaker[wallet];
-         return index;
-    }
+    // /*
+    // ** Return rank position of a wallet
+    // */
+    // function getPosition(address wallet) public view returns (uint256) {
+    //      uint256 index = _indexStaker[wallet];
+    //      return index;
+    // }
 
     /*
     ** Return the amount of GLQ that a wallet can currently claim from the staking contract
     */
-    function getGlqToClaim(address wallet) public view returns(uint256) {
-        uint256 index = _indexStaker[wallet];
-        require (index > 0, "Invalid staking index");
-        GlqStaker storage staker = _stakers[index - 1];
+    function getGlqToClaim(address wallet) public walletExists(wallet) view returns(uint256) {
+        GlqStaker storage staker = _stakers[_walletToID[wallet]];
 
         uint256 calculatedApr = getWaitingPercentAPR(wallet);
         return staker.amount.mul(calculatedApr).div(100).div(1e18);
@@ -124,10 +96,8 @@ contract GlqStakingContract {
     /*
     ** Return the current percent winnable for a staker wallet
     */
-    function getWaitingPercentAPR(address wallet) public view returns(uint256) {
-        uint256 index = _indexStaker[wallet];
-        require (index > 0, "Invalid staking index");
-        GlqStaker storage staker = _stakers[index - 1];
+    function getWaitingPercentAPR(address wallet) public walletExists(wallet) view returns(uint256) {
+        GlqStaker storage staker = _stakers[_walletToID[wallet]];
 
         uint256 walletTier = getWalletCurrentTier(wallet);
         uint256 blocksSpent = block.number.sub(staker.block_number);
@@ -155,16 +125,16 @@ contract GlqStakingContract {
     ** Return the total amount in staking for an hodler.
     */
     function getDepositedGLQ(address wallet) public view returns (uint256) {
-        uint256 index = _indexStaker[wallet];
-        if (index == 0) { return 0; }
-        return _stakers[index-1].amount;
+        uint256 id = _walletToID[wallet];
+        if (id == 0) { return 0; }
+        return _stakers[id].amount;
     }
 
     /*
     ** Count the total numbers of stakers in the contract
     */
     function getTotalStakers() public view returns(uint256) {
-        return _stakers.length;
+        return total_stakes;
     }
 
     /*
@@ -184,42 +154,35 @@ contract GlqStakingContract {
     /*
     ** Return the top 3 of stakers (by age)
     */
-    function getTopStakers() public view returns(address[] memory, uint256[] memory) {
-        uint256 len = _stakers.length;
-        address[] memory addresses = new address[](3);
-        uint256[] memory amounts = new uint256[](3);
-
-        for (uint i = 0; i < len && i <= 2; i++) {
-            addresses[i] = _stakers[i].wallet;
-            amounts[i] = _stakers[i].amount;
+    function getTopStakers() public view returns(address[] memory addresses, uint256[] memory amounts) {
+        addresses = new address[](3);
+        amounts = new uint256[](3);
+        
+        uint256 i = 0;
+        uint256 cursor = tier1_head;
+        
+        while(i < 3 && cursor != 0) {
+            addresses[i] = _stakers[cursor].wallet;
+            amounts[i] = _stakers[cursor].amount;
+            cursor = items[cursor].next;
+            i++;
         }
-
-        return (addresses, amounts);
     }
 
     /*
     ** Return the total amount deposited on a rank tier
     */
-    function getTierTotalStaked(uint tier) public view returns (uint256) {
+    function getTierTotalStaked(uint8 tier) public view returns (uint256) {
+        require(tier > 0 && tier < 4, "Invalid tier value");
+        uint256[] memory tierStakers;
+        if(tier == 1) tierStakers = getTier1();
+        else if(tier == 2) tierStakers = getTier2();
+        else tierStakers = getTier3();
+        
         uint256 totalAmount = 0;
 
-        // Total length of stakers
-        uint256 totalIndex = _stakers.length.mul(1e18);
-        // 15% of hodlers in T1 
-        uint256 t1MaxIndex = totalIndex.div(100).mul(15);
-        // 55% of hodlers in T2
-        uint256 t2MaxIndex = totalIndex.div(100).mul(55);
-
-        uint startIndex = (tier == 1) ? 0 : t1MaxIndex.div(1e18);
-        uint endIndex = (tier == 1) ? t1MaxIndex.div(1e18) : t2MaxIndex.div(1e18);
-        
-        if (tier == 3) {
-            startIndex = t2MaxIndex.div(1e18);
-            endIndex = _stakers.length;
-        }
-
-        for (uint i = startIndex; i <= endIndex && i < _stakers.length; i++) {
-            totalAmount +=  _stakers[i].amount;
+        for (uint i = 0; i < tierStakers.length; i++) {
+            totalAmount +=  _stakers[tierStakers[i]].amount;
         }
       
         return totalAmount;
@@ -313,54 +276,39 @@ contract GlqStakingContract {
            glqToken.transferFrom(msg.sender, address(this), glqAmount) == true,
            "Error transferFrom on the contract"
         );
-
-        uint256 index = _indexStaker[msg.sender];
+        
         _totalStaked += glqAmount;
 
-        if (index == 0) {
-            GlqStaker memory staker = GlqStaker(msg.sender, block.number, glqAmount, _stakersIndex, false);
-            _stakers.push(staker);
-            _indexStaker[msg.sender] = _stakersIndex;
+        if (_walletToID[msg.sender] == 0) {
+            // add new staker
+            uint256 id = _insertTier3();
+            _walletToID[msg.sender] = id;
+            GlqStaker memory staker = GlqStaker(msg.sender, block.number, glqAmount, false);
+            _stakers[id] = staker;
 
             // emit event of a new staker registered at current block position
             emit NewStakerRegistered(msg.sender, block.number, glqAmount);
-            _stakersIndex = _stakersIndex.add(1);
         }
         else {
+            uint256 id = _walletToID[msg.sender];
             // claim rewards before adding new staking amount
-            if (_stakers[index-1].amount > 0) {
+            if (_stakers[id].amount > 0) {
                 claimGlq();
             }
-            _stakers[index-1].amount += glqAmount;
+            _stakers[id].amount += glqAmount;
         }
-    }
-
-    function removeStaker(GlqStaker storage staker) private {
-        uint256 currentIndex = _indexStaker[staker.wallet]-1;
-        _indexStaker[staker.wallet] = 0;
-        for (uint256 i= currentIndex ; i < _stakers.length-1 ; i++) {
-            _stakers[i] = _stakers[i+1];
-            _stakers[i].index_at = _stakers[i].index_at.sub(1);
-            _indexStaker[_stakers[i].wallet] = _stakers[i].index_at;
-        }
-        _stakers.pop();
-
-        // Remove the staker and decrease stakers index
-        _stakersIndex = _stakersIndex.sub(1);
-        if (_stakersIndex == 0) { _stakersIndex = 1; }
     }
 
     /*
     ** Emergency withdraw enabled by GLQ team in an emergency case
     */
-    function emergencyWithdraw() public {
+    function emergencyWithdraw() public walletExists(msg.sender) {
         require(
             _emergencyWithdraw == true,
             "The emergency withdraw feature is not enabled"
         );
-        uint256 index = _indexStaker[msg.sender];
-        require (index > 0, "Invalid staking index");
-        GlqStaker storage staker = _stakers[index - 1];
+        uint256 id = _walletToID[msg.sender];
+        GlqStaker storage staker = _stakers[id];
         IERC20 glqToken = IERC20(_glqTokenAddress);
 
         require(
@@ -377,10 +325,10 @@ contract GlqStakingContract {
     /*
     ** Withdraw Glq from the staking contract (reduce the tier position)
     */
-    function withdrawGlq() public {
-        uint256 index = _indexStaker[msg.sender];
-        require (index > 0, "Invalid staking index");
-        GlqStaker storage staker = _stakers[index - 1];
+    function withdrawGlq() public walletExists(msg.sender) {
+        uint256 id = _walletToID[msg.sender];
+        
+        GlqStaker storage staker = _stakers[id];
         IERC20 glqToken = IERC20(_glqTokenAddress);
         require(
             staker.amount > 0,
@@ -400,7 +348,7 @@ contract GlqStakingContract {
         staker.amount = 0;
         
         if (staker.already_withdrawn) {
-            removeStaker(staker);
+            _removeByID(id);
         } else {
             staker.already_withdrawn = true;
         }
@@ -416,10 +364,10 @@ contract GlqStakingContract {
     /*
     ** Claim waiting rewards from the staking contract
     */
-    function claimGlq() public returns(uint256) {
-        uint256 index = _indexStaker[msg.sender];
-        require (index > 0, "Invalid staking index");
-        GlqStaker storage staker = _stakers[index - 1];
+    function claimGlq() public walletExists(msg.sender) returns(uint256) {
+        uint256 id = _walletToID[msg.sender];
+        
+        GlqStaker storage staker = _stakers[id];
         uint256 glqToClaim = getGlqToClaim(msg.sender);
         IERC20 glqToken = IERC20(_glqTokenAddress);
         if (glqToClaim == 0) { return 0; }
@@ -436,6 +384,12 @@ contract GlqStakingContract {
             "Error transfer on the contract"
         );
         return (glqToClaim);
+    }
+    
+    modifier walletExists(address wallet) {
+        uint256 id = _walletToID[wallet];
+        require(id != 0,"You dont have any tier rank currently in the Staking contract.");
+        _;
     }
 
     /* Setter - Read & Modifications */

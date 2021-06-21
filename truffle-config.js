@@ -10,6 +10,13 @@ module.exports = {
     etherscan: 'NYIF5A6SX811WXZ2PP4F3ZNYSQZFRA6R36'
   },
   networks: {
+    develop: {
+      host: "127.0.0.1",
+      port: 8545,
+      accounts: 5,
+      defaultEtherBalance: 100,
+      network_id: "*"
+    },
     development: {
       provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/4f477eb263cd4f2d8777c2ed46ac552f`),
       //provider: () => new HDWalletProvider(mnemonic, `http://127.0.0.1:7545`),
