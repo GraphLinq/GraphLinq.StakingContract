@@ -305,6 +305,7 @@ contract GlqStakingContract is TierCompute {
         if (_walletToID[msg.sender] == 0) {
             // add new staker
             uint256 id = _insertTier3();
+            _updateCursors();
             _walletToID[msg.sender] = id;
             GlqStaker memory staker = GlqStaker(msg.sender, block.number, glqAmount);
             _stakers[id] = staker;
