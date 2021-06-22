@@ -81,9 +81,10 @@ contract GlqStakingContract is TierCompute {
         uint256 id = _walletToID[wallet];
         if(id == 0) return 0;
         uint256 position = 1;
-        uint256 index = tier1_head;
-        while(index != id) {
-            index = items[index].next;
+        uint256 cursor = tier1_head > 0? tier1_head : tier2_head > 0? tier2_head : tier3_head;
+        if(cursor == 0) return 0;
+        while(cursor != id) {
+            cursor = items[cursor].next;
             position++;
         }
         return position;
@@ -165,7 +166,7 @@ contract GlqStakingContract is TierCompute {
         amounts = new uint256[](3);
         
         uint256 i = 0;
-        uint256 cursor = tier1_head;
+        uint256 cursor = tier1_head > 0? tier1_head : tier2_head > 0? tier2_head : tier3_head;
         
         while(i < 3 && cursor != 0) {
             addresses[i] = _stakers[cursor].wallet;
@@ -325,7 +326,8 @@ contract GlqStakingContract is TierCompute {
             glqToken.transfer(msg.sender, staker.amount) == true,
             "Error transfer on the contract"
         );
-        staker.amount = 0;
+        delete _stakers[id];
+        _removeByID(id);
     }
 
     /*
@@ -351,7 +353,7 @@ contract GlqStakingContract is TierCompute {
             glqToken.transfer(msg.sender, staker.amount) == true,
             "Error transfer on the contract"
         );
-        staker.amount = 0;
+        delete _stakers[id];
         _removeByID(id);
     }
 
