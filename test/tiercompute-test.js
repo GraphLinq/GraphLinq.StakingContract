@@ -148,11 +148,11 @@ contract("TierCompute", async accounts => {
         
         let tier1 = await deployedContract.getTier1();
         let tier2 = await deployedContract.getTier2();
-        let tier3 = await deployedContract.getTier3();;
+        let tier3 = await deployedContract.getTier3();
 
         // remove all tier1
         for(let i = 0; i < tier1.length; i++)
-            await deployedContract.remove(tier1[tier1.length - i - 1]);
+            await deployedContract.remove(tier1[(i + 1) % 6]);
 
         tier1 = await deployedContract.getTier1();
         tier2 = await deployedContract.getTier2();
@@ -168,11 +168,11 @@ contract("TierCompute", async accounts => {
         
         let tier1 = await deployedContract.getTier1();
         let tier2 = await deployedContract.getTier2();
-        let tier3 = await deployedContract.getTier3();;
+        let tier3 = await deployedContract.getTier3();
 
         // remove all tier2
         for(let i = 0; i < tier2.length; i++)
-            await deployedContract.remove(tier2[tier2.length - i - 1]);
+            await deployedContract.remove(tier2[(i + 1) % 15]);
 
         tier1 = await deployedContract.getTier1();
         tier2 = await deployedContract.getTier2();
