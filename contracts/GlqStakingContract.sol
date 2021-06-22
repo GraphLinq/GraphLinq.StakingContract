@@ -233,6 +233,22 @@ contract GlqStakingContract is TierCompute {
         _apyStruct = newApy;
     }
 
+    function setT1Percent(uint8 perc) public {
+        require(
+            msg.sender == _glqDeployerManager,
+            "Only the Glq Deployer can APY rewards");
+
+        _setTier1Percent(perc);
+    }
+
+    function setT2Percent(uint8 perc) public {
+        require(
+            msg.sender == _glqDeployerManager,
+            "Only the Glq Deployer can APY rewards");
+
+        _setTier2Percent(perc);
+    }
+
     /*
     ** Add GLQ liquidity in the staking contract for stakers rewards 
     */

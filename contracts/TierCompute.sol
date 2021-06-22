@@ -236,5 +236,6 @@ contract TierCompute {
         id = uniqueIndex;
         total_stakes++;
         uniqueIndex++;
+        _updateCursors();
     }
 }
