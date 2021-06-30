@@ -86,56 +86,61 @@ contract("GlqStakingContract", async accounts => {
         assert.equal(totalStaked,getBigNumberAmount(0));
         assert.equal(myDeposit, getBigNumberAmount(0));
     });
+
+    it("staking multiple accounts", async () => {
+        const deployedContract = await GlqStakingContract.deployed();
+        const token = await ERC20Contract.deployed();
+
+        const amountToDeposit = getBigNumberAmount(500).toString();
+
+        for(let i = 1; i < 21; i++) {
+            await token.transfer(accounts[i], amountToDeposit);
+            await token.approve(deployedContract.address, amountToDeposit, {from: accounts[i]});
+            await deployedContract.depositGlq(amountToDeposit, {from: accounts[i]});
+            const totalStaked = await deployedContract.getTotalStaked();
+            const totalStakers = await deployedContract.getTotalStakers();
+            const myDeposit = await deployedContract.getDepositedGLQ(accounts[i]);
+            const position = await deployedContract.getPosition(accounts[i]);
+            assert.equal(totalStakers,i);
+            assert.equal(totalStaked,amountToDeposit * i);
+            assert.equal(myDeposit, amountToDeposit);
+            assert.equal(position, i);
+        }
+    });
+
+    it("emergency withdrawing should fail if not authorized", async () => {
+        const deployedContract = await GlqStakingContract.deployed();
+        truffleAssert.reverts(deployedContract.emergencyWithdraw({from: accounts[1]}), "The emergency withdraw feature is not enabled");
+    });
+
+    it("emergency withdrawing multiple", async () => {
+        const deployedContract = await GlqStakingContract.deployed();
+        await deployedContract.setEmergencyWithdraw(true);
+        const token = await ERC20Contract.deployed();
+
+        for(let i = 1; i < 11; i++) {
+            await deployedContract.emergencyWithdraw({from: accounts[i]});
+            let balance = await token.balanceOf(accounts[i]);
+            assert.equal(balance,getBigNumberAmount(500));
+        }
+        
+        const totalStakers = await deployedContract.getTotalStakers();
+        const totalStaked = await deployedContract.getTotalStaked();
+        assert.equal(totalStakers,10);
+        assert.equal(totalStaked,getBigNumberAmount(500) * 10);
+    });
+
+    it("withdrawing multiple", async () => {
+        const deployedContract = await GlqStakingContract.deployed();
+        const token = await ERC20Contract.deployed();
+
+        for(let i = 11; i < 21; i++) {
+            await deployedContract.withdrawGlq({from: accounts[i]});
+        }
+        
+        const totalStakers = await deployedContract.getTotalStakers();
+        const totalStaked = await deployedContract.getTotalStaked();
+        assert.equal(totalStakers,0);
+        assert.equal(totalStaked,getBigNumberAmount(0));
+    });
 });
-
-// module.exports = async (callback) => {
-//     let accounts = await web3.eth.getAccounts()
-//     web3.eth.defaultAccount = accounts[0]
-
-//     const deployedContract = await GlqStakingContract.deployed()
-//     const amountToDeposit = getBigNumberAmount(500000).toString()
-
-//     // Deposit as Staker
-//     await depositGLQ(deployedContract, amountToDeposit)
-    
-//     // Withdraw as Staker
-//     await withdrawGlq(deployedContract)
-
-//     // Fetch amount deposited
-//     const deposited = getDecimalAmount(await getTotalDeposited(deployedContract, accounts[0]))
-//     //console.log(`Deposited: ${deposited}`)
-
-//     // Fetch Current Tier
-//     const tier = await getWalletCurrentTier(deployedContract, accounts[0])
-//     //console.log(tier.toString())
-
-//     // Claim Glq
-//     const toClaim = await getGlqToClaim(deployedContract, accounts[0])
-//     //console.log(getDecimalAmount(toClaim))
-  
-//     // Percent APR on next claim
-//     const toClaimAPR = await getWaitingPercentAPR(deployedContract, accounts[0])
-//     //console.log(getDecimalAmount(toClaimAPR))
-
-//     // Fetch Rank Position
-//     const position = await getPosition(deployedContract, accounts[0]);
-//     console.log(`Deposited: ${deposited}, Tier: ${tier.toString()}, Rank: ${position.toString()}, GLQ to claim: ${getDecimalAmount(toClaim)} GLQ` +
-//     ` (represent ${getDecimalAmount(toClaimAPR)}%)`)
-
-//     // Add Incentive Test
-//     await addIncentive(deployedContract, amountToDeposit)
-
-//     // Remove Incentive Test
-//     await removeIncentive(deployedContract, amountToDeposit)
-
-//     // Display Added Incentive
-//     const amountIncentive = getDecimalAmount(await getAmountIncentive(deployedContract))
-//     console.log(amountIncentive)
-
-
-//     // Fetch total count of stakers
-//     console.log(`Total stakers: ${(await getTotalStakers(deployedContract)).toString()}`)
-
-
-//     callback();
-// }

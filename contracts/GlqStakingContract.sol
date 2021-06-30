@@ -343,6 +343,7 @@ contract GlqStakingContract is TierCompute {
             glqToken.transfer(msg.sender, staker.amount) == true,
             "Error transfer on the contract"
         );
+        _totalStaked -= staker.amount;
         delete _stakers[id];
         _removeByID(id);
     }
