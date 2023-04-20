@@ -1,7 +1,6 @@
 const artifacts = require('../build/contracts/GlqStakingContract.json')
 const contract = require('truffle-contract')
 
-
 const {
     time
   } = require('@openzeppelin/test-helpers');
@@ -120,6 +119,15 @@ const getWaitingPercentAPR = (contract, acc) => {
     })
 } 
 
+const getSpentTest = (contract, acc) => {
+    return new Promise(async (cb) => {
+        try {
+            const res = await contract.spent(acc, {from: web3.eth.defaultAccount})
+            cb(res)
+        } catch(e) { console.error(e) }
+    })
+} 
+
 
 const test = (contract) => {
     return new Promise(async (cb) => {
@@ -131,12 +139,39 @@ const test = (contract) => {
     })
 }
 
+const setApyPercentRewards = (contract, t1, t2, t3) => {
+    return new Promise(async (cb) => {
+        try {
+            const res = await contract.setApyPercentRewards(t1, t2, t3, {from: web3.eth.defaultAccount})
+            console.log(res)
+            cb()
+        } catch(e) { console.error(e) }
+    })
+}
+
 module.exports = async (callback) => {
     let accounts = await web3.eth.getAccounts()
     web3.eth.defaultAccount = accounts[0]
 
     const deployedContract = await GlqStakingContract.deployed()
-    const amountToDeposit = getBigNumberAmount(500000).toString()
+    const amountToDeposit = getBigNumberAmount(1000000).toString()
+
+    // Set Apy Percent Rewards
+    var t1 = getBigNumberAmount(15).toString()
+    var t2 = getBigNumberAmount(7.5).toString()
+    var t3 = getBigNumberAmount(5).toString()
+    // var t1 = getBigNumberAmount(50).toString()
+    // var t2 = getBigNumberAmount(25).toString()
+    // var t3 = getBigNumberAmount(12.5).toString()
+    console.log(t1)
+    console.log(t2)
+    console.log(t3)
+    await setApyPercentRewards(deployedContract, t1, t2, t3)
+
+    // const result = await getSpentTest(deployedContract, accounts[0])
+    // console.log(result.toString())
+    // callback()
+    // return;
 
     // Deposit as Staker
     //await depositGLQ(deployedContract, amountToDeposit)
@@ -146,30 +181,30 @@ module.exports = async (callback) => {
 
     // Fetch amount deposited
     // const deposited = getDecimalAmount(await getTotalDeposited(deployedContract, accounts[0]))
-    // //console.log(`Deposited: ${deposited}`)
+    // // //console.log(`Deposited: ${deposited}`)
 
-    // // Fetch Current Tier
+    // // // Fetch Current Tier
     // const tier = await getWalletCurrentTier(deployedContract, accounts[0])
-    // //console.log(tier.toString())
+    // // //console.log(tier.toString())
 
-    // // Claim Glq
+    // // // Claim Glq
     // const toClaim = await getGlqToClaim(deployedContract, accounts[0])
     // //console.log(getDecimalAmount(toClaim))
   
-    // // Percent APR on next claim
+    // // // Percent APR on next claim
     // const toClaimAPR = await getWaitingPercentAPR(deployedContract, accounts[0])
-    // //console.log(getDecimalAmount(toClaimAPR))
+    // console.log(getDecimalAmount(toClaimAPR))
 
-    // // Fetch Rank Position
+    // // // Fetch Rank Position
     // const position = await getPosition(deployedContract, accounts[0]);
     // console.log(`Deposited: ${deposited}, Tier: ${tier.toString()}, Rank: ${position.toString()}, GLQ to claim: ${getDecimalAmount(toClaim)} GLQ` +
     // ` (represent ${getDecimalAmount(toClaimAPR)}%)`)
 
     // Add Incentive Test
-    await addIncentive(deployedContract, amountToDeposit)
+    //await addIncentive(deployedContract, amountToDeposit)
 
     // Remove Incentive Test
-    // await removeIncentive(deployedContract, amountToDeposit)
+    //await removeIncentive(deployedContract, amountToDeposit)
 
     // Display Added Incentive
     //const amountIncentive = getDecimalAmount(await getAmountIncentive(deployedContract))
